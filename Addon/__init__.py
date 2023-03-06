@@ -18,41 +18,53 @@ class MovePanel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_move_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Move"
+    bl_category = "Move Velocity"
     
     def draw(self, context):
         layout = self.layout
         scene = context.scene
         obj = context.active_object
-        
-        # X Destination
+
+        col = layout.column()
+        col.prop(scene, "move_x_dest")
+        col.prop(scene, "move_y_dest")
+        col.prop(scene, "move_z_dest")
+
         row = layout.row()
-        row.label(text="X Destination")
-        row.prop(scene, "move_x_dest")
-        
-        # Y Destination
-        row = layout.row()
-        row.label(text="Y Destination")
-        row.prop(scene, "move_y_dest")
-        
-        # Acceleration
-        row = layout.row()
-        row.label(text="Acceleration")
-        row.prop(scene, "move_accel")
-        
-        # Velocity
-        row = layout.row()
-        row.label(text="Velocity")
-        row.prop(scene, "move_vel")
+        row.prop(scene,"move_accel")
+        row.prop(scene,"move_vel")
+
+
+     #   # X Destination
+     #   row = layout.row()
+     #   row.label(text="X Destination")
+     #   row.prop(scene, "move_x_dest")
+     #   
+     #   # Y Destination
+     #   row = layout.row()
+     #   row.label(text="Y Destination")
+     #   row.prop(scene, "move_y_dest")
+     #   
+     #   # Acceleration
+     #   row = layout.row()
+     #   row.label(text="Acceleration")
+     #   row.prop(scene, "move_accel")
+     #   
+     #   # Velocity
+     #   row = layout.row()
+     #   row.label(text="Velocity")
+     #   row.prop(scene, "move_vel")
         
         # Insert Move button
         row = layout.row()
         row.operator("object.insert_move", text="Insert Move")
+        row.scale_y = 2
 
 def register():
     bpy.utils.register_class(MovePanel)
     bpy.types.Scene.move_x_dest = bpy.props.FloatProperty(name="X Destination", default=0.0)
     bpy.types.Scene.move_y_dest = bpy.props.FloatProperty(name="Y Destination", default=0.0)
+    bpy.types.Scene.move_z_dest = bpy.props.FloatProperty(name="Z Destination", default=0.0)
     bpy.types.Scene.move_accel = bpy.props.FloatProperty(name="Acceleration", default=1.0)
     bpy.types.Scene.move_vel = bpy.props.FloatProperty(name="Velocity", default=1.0)
     bpy.utils.register_class(OBJECT_OT_insert_move)
@@ -80,8 +92,8 @@ class OBJECT_OT_insert_move(bpy.types.Operator):
 
         # Initialize dynamics
 
-        input_acceleration = context.scene.move_vel
-        input_velocity = context.scene.move_accel
+        input_acceleration = context.scene.move_accel
+        input_velocity = context.scene.move_vel
 
         destination_position = math.Vector((context.scene.move_x_dest,context.scene.move_y_dest,0))
         starting_position = obj.location.copy()
@@ -110,7 +122,7 @@ class OBJECT_OT_insert_move(bpy.types.Operator):
 
         obj.location = current_position
         bpy.context.view_layer.update()
-        bpy.ops.anim.keyframe_insert(type='BUILTIN_KSI_LocRot')
+        obj.keyframe_insert(data_path='location')
 
         for frames in range(scene.frame_current + 1,int(frame_total)+scene.frame_current):
 
@@ -119,27 +131,26 @@ class OBJECT_OT_insert_move(bpy.types.Operator):
 
             scene.frame_set(frames)
 
-            if remaining_distance >= ( d2 + d3 ):
-                # movement phase 1
-                current_velocity += motion_direction * input_acceleration * timestep
-            elif remaining_distance > d3:
+            if remaining_distance < d3:
+                # movement phase 3
+                current_velocity -= motion_direction * input_acceleration * timestep
+            elif remaining_distance < ( d2 + d3 ):
                 # movement phase 2
                 current_velocity.normalize()
                 current_velocity *= input_velocity
             else:
-                # movement phase 3
-                current_velocity -= motion_direction * input_acceleration * timestep
+                # movement phase 1
+                current_velocity += motion_direction * input_acceleration * timestep
 
-            print("current velocity = " + str(current_velocity.length))    
             current_position += current_velocity * timestep
 
             obj.location = current_position
             bpy.context.view_layer.update()
-            bpy.ops.anim.keyframe_insert(type='BUILTIN_KSI_LocRot')
+            obj.keyframe_insert(data_path='location',frame=frames)
 
         scene.frame_set(scene.frame_current + 1)
         current_position = destination_position
-        
+
         return {'FINISHED'}
 
 if __name__ == "__main__":
