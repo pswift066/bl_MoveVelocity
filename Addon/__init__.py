@@ -12,6 +12,7 @@ bl_info = {
 
 import bpy
 import mathutils as math
+from math import sqrt
 
 class MovePanel(bpy.types.Panel):
     bl_label = "Move Panel"
@@ -111,12 +112,25 @@ class OBJECT_OT_insert_move(bpy.types.Operator):
         d3 = d1
         d2 = move_distance - ( d1 + d3 )
 
-        # how many frames do we need to calculate?
-
         l1 = input_velocity / input_acceleration
         l2 = d2 / input_velocity
         l3 = l1
         ltotal = l1 + l2 + l3
+
+        if d2 < 0:
+            d1 = move_distance / 2
+            d2 = 0
+            d3 = move_distance / 2
+
+            l1 = sqrt( move_distance / input_acceleration )
+            l2 = 0
+            l3 = sqrt( move_distance / input_acceleration )
+
+            ltotal = l1 + l2 + l3
+
+        # how many frames do we need to calculate?
+
+
 
         frame_total = ltotal * scene.render.fps
 
