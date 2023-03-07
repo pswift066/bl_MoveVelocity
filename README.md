@@ -1,7 +1,13 @@
 # bl_MoveVelocity
 Simple path-planner utility to build object keyframes in Velocity-space in Blender
 
+Plug in basic parameters for an absolute positional movement
+
 ![Screenshot](PanelScreen.png)
+
+And insert keyframes for a 3-segment acceleration, constant-v, deceleration movement.
+
+![Screenshot](Trajectory.png)
 
 ## Usage
 
@@ -17,5 +23,3 @@ Simple path-planner utility to build object keyframes in Velocity-space in Blend
 ## Installation
 
 Install the Addon from Edit > Preferences > Addons
-
-
